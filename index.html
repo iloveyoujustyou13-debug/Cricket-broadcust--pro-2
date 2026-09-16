@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBP - Cloud Broadcast Station Extreme</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            background-color: #030712;
+            color: #f9fafb;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .neon-border-rose { box-shadow: 0 0 15px rgba(244,63,94,.2); border-color: rgba(244,63,94,.6); }
+        .neon-border-emerald { box-shadow: 0 0 15px rgba(16,185,129,.2); border-color: rgba(16,185,129,.6); }
+        .neon-border-sky { box-shadow: 0 0 15px rgba(14,165,233,.25); border-color: rgba(14,165,233,.6); }
+        .vMix-panel {
+            background: linear-gradient(135deg,#0f172a 0%,#020617 100%);
+            border: 1px solid #1e293b;
+        }
+        #bigScreenVideo { width: 100%; height: 100%; object-fit: contain; background:#000; }
+    </style>
+</head>
+<body class="p-3 md:p-6 min-h-screen flex flex-col justify-between select-none">
+
+<header class="flex justify-between items-center mb-6 bg-slate-950 border border-slate-900 p-4 rounded-2xl shadow-2xl">
+    <div class="flex items-center gap-3">
+        <span class="text-2xl">⚡</span>
+        <div>
+            <h1 class="text-xl font-black tracking-wider text-rose-500 bg-clip-text">CRICKET BROADCAST PRO</h1>
+            <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Extreme Enterprise Multi-Cam Switcher</p>
+        </div>
+    </div>
+    <div class="text-[11px] font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+        Engine v4.0.0-Remote-Mirror
+    </div>
+</header>
+
+<!-- ================= LOBBY ================= -->
+<div id="lobbyGate" class="max-w-5xl mx-auto my-auto w-full vMix-panel rounded-3xl p-8 shadow-2xl text-center">
+    <h2 class="text-xl font-black text-slate-200 mb-2 uppercase tracking-wide">Select Production Workspace</h2>
+    <p class="text-xs text-slate-400 mb-8">কন্ট্রোল রুম তৈরি করতে ডিরেক্টর মোড অথবা গ্রাউন্ড থেকে কাস্ট করতে ক্যামেরা মোড সিলেক্ট করুন</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <button onclick="openWorkspace('director')" class="group border border-rose-500/20 hover:neon-border-rose bg-slate-950/80 p-8 rounded-2xl transition-all duration-300 flex flex-col items-center gap-4 shadow-2xl">
+            <div class="w-14 h-14 bg-rose-500/10 rounded-full flex items-center justify-center text-3xl group-hover:bg-rose-500/20 transition">🎬</div>
+            <span class="font-black text-rose-400 tracking-wider uppercase text-base">Director Control Desk</span>
+            <span class="text-xs text-slate-400 leading-relaxed">৪টি রিমোট ক্যামেরা ফিড ও লাইভ স্কোরবোর্ড ওভারলে ফুল মিক্সিং করুন।</span>
+        </button>
+
+        <button onclick="openWorkspace('camera')" class="group border border-emerald-500/20 hover:neon-border-emerald bg-slate-950/80 p-8 rounded-2xl transition-all duration-300 flex flex-col items-center gap-4 shadow-2xl">
+            <div class="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center text-3xl group-hover:bg-emerald-500/20 transition">🎥</div>
+            <span class="font-black text-emerald-400 tracking-wider uppercase text-base">Field Camera Node</span>
+            <span class="text-xs text-slate-400 leading-relaxed">৮-ডিজিটের সিক্রেট কোড লিখে অডিও ও ভিডিও কাস্ট করুন।</span>
+        </button>
+
+        <button onclick="openWorkspace('bigscreen')" class="group border border-sky-500/20 hover:neon-border-sky bg-slate-950/80 p-8 rounded-2xl transition-all duration-300 flex flex-col items-center gap-4 shadow-2xl">
+            <div class="w-14 h-14 bg-sky-500/10 rounded-full flex items-center justify-center text-3xl group-hover:bg-sky-500/20 transition">🖥️</div>
+            <span class="font-black text-sky-400 tracking-wider uppercase text-base">Big Screen PGM Wall</span>
+            <span class="text-xs text-slate-400 leading-relaxed">অন্য ডিভাইস থেকে সিক্রেট কোড দিয়ে কানেক্ট করে ডিরেক্টরের লাইভ আউটপুট দেখুন।</span>
+        </button>
+    </div>
+</div>
+
+<!-- ================= DIRECTOR PANEL ================= -->
+<div id="directorWindow" class="hidden max-w-7xl mx-auto w-full vMix-panel rounded-3xl p-4 md:p-6 shadow-2xl">
+    <div class="flex flex-col sm:flex-row justify-between items-center border-b border-slate-800 pb-4 mb-4 gap-4">
+        <div class="flex items-center gap-3">
+            <button onclick="exitToLobby()" class="text-xs font-bold text-slate-400 hover:text-white bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 transition">← Exit Desk</button>
+            <h2 class="font-black text-rose-400 tracking-wide uppercase text-sm">Director Master Desk</h2>
+        </div>
+        <button id="createRoomBtn" onclick="initiateDirectorRoom()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-black px-5 py-2.5 rounded-xl transition shadow-lg uppercase tracking-wider">
+            Initialize Cloud Network
+        </button>
+        <div id="codeDisplaySection" class="hidden items-center gap-2">
+            <span class="text-xs font-bold text-slate-400">SECRET ROOM CODE:</span>
+            <span id="secretCodeBox" class="bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono font-black text-xl px-4 py-1.5 rounded-xl tracking-widest shadow-inner">--------</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 flex flex-col gap-4">
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 flex flex-wrap justify-between items-center gap-3">
+                <span class="text-xs font-black text-slate-400 uppercase tracking-wider">📺 Screen Aspect Ratio:</span>
+                <select id="canvasRatioSelector" onchange="setAspectRatio(this.value)" class="bg-slate-900 border border-slate-800 text-xs font-bold text-rose-400 p-2 rounded-xl focus:outline-none focus:border-rose-500 cursor-pointer">
+                    <option value="16:9" selected>16:9 (YouTube / FB Live Wide)</option>
+                    <option value="4:3">4:3 (Classic TV Square)</option>
+                    <option value="9:16">9:16 (Vertical Short / Reel Live)</option>
+                    <option value="1:1">1:1 (Square Feed)</option>
+                </select>
+            </div>
+
+            <div class="bg-slate-950 border-2 border-red-600 rounded-2xl overflow-hidden shadow-2xl relative flex items-center justify-center aspect-video transition-all duration-300" id="canvasFrameWrapper">
+                <div class="bg-red-600 text-white text-[9px] font-black px-2.5 py-1.5 uppercase tracking-widest absolute top-0 left-0 z-10 rounded-br-lg">🔴 PGM OUT (LIVE AIR)</div>
+                <canvas id="programCanvas" class="bg-black max-w-full max-h-full block object-cover"></canvas>
+            </div>
+
+            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-400">Camera Switching Matrix</h3>
+                    <span id="activeCamCount" class="text-xs font-mono text-slate-500">ENGAGED CHANNELS: 0/4</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div onclick="selectLiveCamChannel('cam1')" id="box-cam1" class="border border-slate-800 bg-slate-900 rounded-xl p-2 cursor-pointer opacity-20 scale-95 transition-all duration-300 select-none">
+                        <div class="text-[10px] font-black flex justify-between uppercase mb-1 pointer-events-none">
+                            <span>CAMERA 1</span><span id="status-cam1" class="text-red-500">OFFLINE</span>
+                        </div>
+                        <div class="aspect-video bg-black rounded-lg mb-2 overflow-hidden border border-slate-800 relative pointer-events-none">
+                            <video id="v-cam1" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                            <div id="thumb-cam1" class="absolute inset-0 flex items-center justify-center text-xs text-slate-600 font-mono bg-black">NO FEED</div>
+                        </div>
+                        <div class="text-[9px] font-mono text-slate-400 flex justify-between bg-slate-950 p-1 rounded border border-slate-900 pointer-events-none">
+                            <span>Bitrate:</span><span id="bitrate-cam1">0 Kbps</span>
+                        </div>
+                    </div>
+                    <div onclick="selectLiveCamChannel('cam2')" id="box-cam2" class="border border-slate-800 bg-slate-900 rounded-xl p-2 cursor-pointer opacity-20 scale-95 transition-all duration-300 select-none">
+                        <div class="text-[10px] font-black flex justify-between uppercase mb-1 pointer-events-none">
+                            <span>CAMERA 2</span><span id="status-cam2" class="text-red-500">OFFLINE</span>
+                        </div>
+                        <div class="aspect-video bg-black rounded-lg mb-2 overflow-hidden border border-slate-800 relative pointer-events-none">
+                            <video id="v-cam2" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                            <div id="thumb-cam2" class="absolute inset-0 flex items-center justify-center text-xs text-slate-600 font-mono bg-black">NO FEED</div>
+                        </div>
+                        <div class="text-[9px] font-mono text-slate-400 flex justify-between bg-slate-950 p-1 rounded border border-slate-900 pointer-events-none">
+                            <span>Bitrate:</span><span id="bitrate-cam2">0 Kbps</span>
+                        </div>
+                    </div>
+                    <div onclick="selectLiveCamChannel('cam3')" id="box-cam3" class="border border-slate-800 bg-slate-900 rounded-xl p-2 cursor-pointer opacity-20 scale-95 transition-all duration-300 select-none">
+                        <div class="text-[10px] font-black flex justify-between uppercase mb-1 pointer-events-none">
+                            <span>CAMERA 3</span><span id="status-cam3" class="text-red-500">OFFLINE</span>
+                        </div>
+                        <div class="aspect-video bg-black rounded-lg mb-2 overflow-hidden border border-slate-800 relative pointer-events-none">
+                            <video id="v-cam3" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                            <div id="thumb-cam3" class="absolute inset-0 flex items-center justify-center text-xs text-slate-600 font-mono bg-black">NO FEED</div>
+                        </div>
+                        <div class="text-[9px] font-mono text-slate-400 flex justify-between bg-slate-950 p-1 rounded border border-slate-900 pointer-events-none">
+                            <span>Bitrate:</span><span id="bitrate-cam3">0 Kbps</span>
+                        </div>
+                    </div>
+                    <div onclick="selectLiveCamChannel('cam4')" id="box-cam4" class="border border-slate-800 bg-slate-900 rounded-xl p-2 cursor-pointer opacity-20 scale-95 transition-all duration-300 select-none">
+                        <div class="text-[10px] font-black flex justify-between uppercase mb-1 pointer-events-none">
+                            <span>CAMERA 4</span><span id="status-cam4" class="text-red-500">OFFLINE</span>
+                        </div>
+                        <div class="aspect-video bg-black rounded-lg mb-2 overflow-hidden border border-slate-800 relative pointer-events-none">
+                            <video id="v-cam4" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                            <div id="thumb-cam4" class="absolute inset-0 flex items-center justify-center text-xs text-slate-600 font-mono bg-black">NO FEED</div>
+                        </div>
+                        <div class="text-[9px] font-mono text-slate-400 flex justify-between bg-slate-950 p-1 rounded border border-slate-900 pointer-events-none">
+                            <span>Bitrate:</span><span id="bitrate-cam4">0 Kbps</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4 flex flex-col justify-between">
+            <div class="bg-slate-950 border border-slate-850 rounded-2xl p-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-400">TV Graphics Control</h3>
+                    <button id="overlaySwitchBtn" onclick="toggleScoreboardOverlay()" class="bg-blue-600 text-[10px] font-black px-3 py-1 rounded-lg uppercase transition">Graphics: ON</button>
+                </div>
+                <div class="space-y-3">
+                    <input type="text" id="scoreInput" value="IND 145/4" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono font-bold focus:outline-none">
+                    <input type="text" id="oversInput" value="17.3 OVERS" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono font-bold focus:outline-none">
+                    <input type="text" id="batsmanInput" value="Virat Kohli 78*(45)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-bold focus:outline-none">
+                    <input type="text" id="sponsorInput" value="IPL FINAL MATCH 2026" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-rose-400 font-bold focus:outline-none">
+                </div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-850 rounded-2xl p-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-sky-400">Mirror Sessions</h3>
+                    <span id="mirrorCountBadge" class="text-[9px] bg-slate-900 text-slate-400 font-bold px-2 py-0.5 rounded border border-slate-800 uppercase">0 CONNECTED</span>
+                </div>
+                <p class="text-[10px] text-slate-500 leading-relaxed">অন্য ডিভাইসে Big Screen প্যানেল খুলে নিচের কোডটি দিন — লাইভ PGM আউটপুট সেখানে মিরর হবে।</p>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-850 rounded-2xl p-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-rose-500">Social Media RTMP Stream</h3>
+                    <span id="streamIndicator" class="text-[9px] bg-slate-900 text-slate-500 font-bold px-2 py-0.5 rounded border border-slate-800 uppercase">OFF AIR</span>
+                </div>
+
+                <div class="space-y-2 mb-3">
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Stream URL</label>
+                        <input type="text" id="rtmpUrlInput" placeholder="e.g. rtmp://a.rtmp.youtube.com/live2" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-300 font-mono focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Stream Key</label>
+                        <input type="password" id="rtmpKeyInput" placeholder="Paste Secret Stream Key Here" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-300 font-mono focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button id="startLiveBtn" onclick="toggleCloudStreaming()" class="w-full bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black py-2.5 rounded-xl uppercase tracking-wider transition">
+                        GO LIVE ON YT/FB
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CAMERA PANEL ================= -->
+<div id="cameraWindow" class="hidden max-w-md mx-auto w-full vMix-panel rounded-3xl p-6 shadow-2xl text-center">
+    <div class="flex items-center gap-3 mb-6 border-b border-slate-800 pb-3">
+        <button onclick="exitToLobby()" class="text-xs font-bold text-slate-400 hover:text-white bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 transition">← Cancel</button>
+        <h2 class="font-black text-emerald-400 tracking-wide uppercase text-xs">Field Transmission Node</h2>
+    </div>
+
+    <div id="joinGateWindow" class="transition-all duration-300">
+        <p class="text-xs text-slate-400 mb-4 leading-relaxed">মাস্টার ডিরেক্টর ড্যাশবোর্ডে জেনারেট হওয়া ৮-ডিজিটের সিক্রেট কোডটি এখানে টাইপ বা পেস্ট করুন।</p>
+        <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-amber-400 text-[11px] font-bold mb-6 text-center">
+            📢 ক্যামেরা কানেক্ট করার আগে আপনার মোবাইলটিকে আড়াআড়ি (Landscape) করে নিন।
+        </div>
+        <div class="mb-6 text-left">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider text-center">Secret Encryption Code</label>
+            <input type="text" id="studioRoomCode" placeholder="CBP-XXXXXXXX" maxlength="12" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center font-mono font-black text-xl text-emerald-400 uppercase tracking-widest focus:outline-none focus:border-emerald-500 transition shadow-inner">
+        </div>
+        <button onclick="activateFieldCameraNode()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-emerald-600/20 uppercase text-xs tracking-widest font-black">
+            Establish Secure Uplink
+        </button>
+    </div>
+
+    <div id="streamingActiveWindow" class="hidden transition-all duration-300">
+        <div class="flex justify-center items-center gap-2 mb-4">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+            <h2 id="assignedNodeName" class="text-emerald-400 font-black tracking-widest uppercase text-xs">FEED INJECTED</h2>
+        </div>
+        <div class="aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 mb-4 shadow-2xl">
+            <video id="localCamMonitor" autoplay playsinline muted class="w-full h-full object-cover"></video>
+        </div>
+    </div>
+</div>
+
+<!-- ================= BIG SCREEN PGM WALL (REMOTE MIRROR) ================= -->
+<div id="bigScreenPanel" class="hidden fixed inset-0 z-50 bg-black flex-col">
+
+    <!-- Gate -->
+    <div id="bigScreenGate" class="flex-1 flex items-center justify-center bg-black">
+        <div class="max-w-md w-full mx-4 vMix-panel rounded-3xl p-8 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="text-5xl mb-3">🖥️</div>
+                <h2 class="text-lg font-black text-sky-400 uppercase tracking-wider mb-2">Big Screen Remote Mirror</h2>
+                <p class="text-xs text-slate-400 leading-relaxed">ডিরেক্টরের দেওয়া ৮-ডিজিটের সিক্রেট কোড দিন — এই ডিভাইসে লাইভ PGM আউটপুট মিরর হবে।</p>
+            </div>
+
+            <div id="bigScreenError" class="hidden bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-xs font-bold mb-4 text-center"></div>
+
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider text-center">Secret Room Code</label>
+            <input type="text" id="bigScreenCodeInput" placeholder="CBP-XXXXXXXX" maxlength="12" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-center font-mono font-black text-xl text-sky-400 uppercase tracking-widest focus:outline-none focus:border-sky-500 transition shadow-inner mb-4">
+
+            <button onclick="submitBigScreenCode()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-sky-600/20 uppercase text-xs tracking-widest font-black mb-3">
+                🔗 Connect to Live Mirror
+            </button>
+            <button onclick="closeBigScreen()" class="w-full text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 py-3 rounded-xl border border-slate-800 transition uppercase text-xs font-black tracking-wider">
+                ← Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Stage -->
+    <div id="bigScreenStage" class="hidden flex-1 relative flex items-center justify-center bg-black overflow-hidden">
+        <video id="bigScreenVideo" autoplay playsinline class="w-full h-full object-contain bg-black"></video>
+
+        <div class="absolute top-0 left-0 bg-red-600 text-white text-[10px] md:text-xs font-black px-3 py-1.5 uppercase tracking-widest rounded-br-xl shadow-lg pointer-events-none">
+            🔴 LIVE MIRROR — <span id="bigScreenRoomLabel">--------</span>
+        </div>
+
+        <div id="bigScreenClock" class="absolute top-0 right-0 bg-slate-950/80 backdrop-blur text-slate-300 text-[10px] md:text-xs font-mono font-bold px-3 py-1.5 rounded-bl-xl border-l border-b border-slate-800 pointer-events-none">
+            --:--:--
+        </div>
+
+        <div id="bigScreenConnState" class="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur text-amber-400 text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl border border-slate-800 pointer-events-none">
+            ⏳ Establishing secure link...
+        </div>
+
+        <button id="bigBarRestoreBtn" onclick="toggleBigControlBar()" class="hidden absolute top-3 right-3 z-20 bg-slate-950/80 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-xl px-3 py-2 text-xs font-black transition">⚙ CONTROLS</button>
+    </div>
+
+    <!-- Control bar (remote commands to director) -->
+    <div id="bigControlBar" class="hidden bg-slate-950/95 backdrop-blur border-t border-slate-800 px-3 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="closeBigScreen()" class="text-[11px] font-black text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 px-3 py-2 rounded-xl border border-slate-800 transition uppercase tracking-wider">← Exit</button>
+            <button onclick="toggleBigFullscreen()" class="text-[11px] font-black text-sky-300 bg-sky-500/10 hover:bg-sky-600 hover:text-white px-3 py-2 rounded-xl border border-sky-500/30 transition uppercase tracking-wider">⛶ Fullscreen</button>
+            <button id="bigGraphicsBtn" onclick="remoteToggleGraphics()" class="text-[11px] font-black text-blue-300 bg-blue-500/10 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-xl border border-blue-500/30 transition uppercase tracking-wider">Graphics: ON</button>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-[10px] font-black text-slate-500 uppercase tracking-wider">Remote Cam:</span>
+            <button id="bigbtn-cam1" onclick="remoteSwitchCamera('cam1')" class="text-[10px] font-black px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition opacity-30">CAM 1</button>
+            <button id="bigbtn-cam2" onclick="remoteSwitchCamera('cam2')" class="text-[10px] font-black px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition opacity-30">CAM 2</button>
+            <button id="bigbtn-cam3" onclick="remoteSwitchCamera('cam3')" class="text-[10px] font-black px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition opacity-30">CAM 3</button>
+            <button id="bigbtn-cam4" onclick="remoteSwitchCamera('cam4')" class="text-[10px] font-black px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition opacity-30">CAM 4</button>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <select id="bigRatioSelector" onchange="remoteSetRatio(this.value)" class="bg-slate-900 border border-slate-800 text-[10px] font-black text-sky-400 p-2 rounded-xl focus:outline-none focus:border-sky-500 cursor-pointer">
+                <option value="16:9" selected>16:9 WIDE</option>
+                <option value="4:3">4:3 CLASSIC</option>
+                <option value="9:16">9:16 VERTICAL</option>
+                <option value="1:1">1:1 SQUARE</option>
+            </select>
+            <span id="bigLiveBadge" class="text-[9px] bg-slate-900 text-slate-500 font-bold px-2 py-1.5 rounded border border-slate-800 uppercase">STANDBY</span>
+            <button onclick="toggleBigControlBar()" class="text-[11px] font-black text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 px-3 py-2 rounded-xl border border-slate-800 transition uppercase tracking-wider">▼ Hide UI</button>
+        </div>
+    </div>
+</div>
+
+<footer class="text-center text-[10px] text-slate-600 mt-6 uppercase tracking-widest">
+    &copy; 2026 Cricket Broadcast Pro • Pure Cloud Base Matrix
+</footer>
+
+<script>
+// ============================================================
+//  GLOBAL STATE
+// ============================================================
+const SERVER_URL = 'wss://cbp-signaling.onrender.com';
+let wsDirector = null;
+let wsCamera = null;
+let wsBigScreen = null;
+
+let peerConnections = {};        // camId -> RTCPeerConnection (director <-> camera)
+let bigScreenPeers = {};         // screenId -> RTCPeerConnection (director -> big screen)
+let connectedCount = 0;
+let localMediaStream = null;
+let pcCam = null;
+let pcBigScreen = null;
+let activeLiveStreamId = null;
+let renderOverlayActive = true;
+let isCloudStreamingActive = false;
+let mediaRecorder = null;
+let directorRoomCode = null;
+
+let currentTargetRatio = "16:9";
+let bigScreenActive = false;
+let bigClockInterval = null;
+let bigScreenId = null;
+
+const canvas = document.getElementById('programCanvas');
+const ctx = canvas.getContext('2d');
+
+// ============================================================
+//  ASPECT RATIO
+// ============================================================
+function setAspectRatio(ratio) {
+    currentTargetRatio = ratio;
+    const directorSel = document.getElementById('canvasRatioSelector');
+    if (directorSel) directorSel.value = ratio;
+    const bigSel = document.getElementById('bigRatioSelector');
+    if (bigSel) bigSel.value = ratio;
+
+    const wrapper = document.getElementById('canvasFrameWrapper');
+    if (wrapper) {
+        wrapper.classList.remove('aspect-video', 'aspect-square', 'aspect-[4/3]', 'aspect-[9/16]');
+        if (ratio === "16:9") { canvas.width = 1280; canvas.height = 720; wrapper.classList.add('aspect-video'); }
+        else if (ratio === "4:3") { canvas.width = 960; canvas.height = 720; wrapper.classList.add('aspect-[4/3]'); }
+        else if (ratio === "9:16") { canvas.width = 720; canvas.height = 1280; wrapper.classList.add('aspect-[9/16]'); }
+        else if (ratio === "1:1") { canvas.width = 720; canvas.height = 720; wrapper.classList.add('aspect-square'); }
+    }
+}
+setAspectRatio("16:9");
+
+// ============================================================
+//  WORKSPACE SWITCHING
+// ============================================================
+function openWorkspace(mode) {
+    document.getElementById('lobbyGate').classList.add('hidden');
+    if (mode === 'director') {
+        document.getElementById('directorWindow').classList.remove('hidden');
+        setAspectRatio(currentTargetRatio);
+    } else if (mode === 'camera') {
+        document.getElementById('cameraWindow').classList.remove('hidden');
+    } else if (mode === 'bigscreen') {
+        openBigScreen();
+    }
+}
+
+function exitToLobby() {
+    try {
+        if (wsDirector && wsDirector.readyState <= 1) wsDirector.close();
+        if (wsCamera && wsCamera.readyState <= 1) wsCamera.close();
+        if (wsBigScreen && wsBigScreen.readyState <= 1) wsBigScreen.close();
+        if (localMediaStream) localMediaStream.getTracks().forEach(t => { try{t.stop();}catch(e){} });
+        Object.values(peerConnections).forEach(pc => { try{pc.close();}catch(e){} });
+        Object.values(bigScreenPeers).forEach(pc => { try{pc.close();}catch(e){} });
+        if (pcCam) { try{pcCam.close();}catch(e){} }
+        if (pcBigScreen) { try{pcBigScreen.close();}catch(e){} }
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') { try{mediaRecorder.stop();}catch(e){} }
+    } catch (e) { console.error('Exit cleanup:', e); }
+
+    wsDirector = null; wsCamera = null; wsBigScreen = null;
+    peerConnections = {}; bigScreenPeers = {};
+    pcCam = null; pcBigScreen = null;
+    mediaRecorder = null; localMediaStream = null;
+    connectedCount = 0; activeLiveStreamId = null;
+    isCloudStreamingActive = false; directorRoomCode = null;
+    bigScreenId = null;
+
+    if (bigScreenActive) { try { closeBigScreen(); } catch(e){} }
+
+    document.getElementById('directorWindow').classList.add('hidden');
+    document.getElementById('cameraWindow').classList.add('hidden');
+    document.getElementById('lobbyGate').classList.remove('hidden');
+
+    resetDirectorUI();
+    resetCameraUI();
+    resetBigScreenUI();
+    setAspectRatio("16:9");
+}
+
+function resetDirectorUI() {
+    const btn = document.getElementById('createRoomBtn');
+    if (btn) btn.classList.remove('hidden');
+    const codeSec = document.getElementById('codeDisplaySection');
+    if (codeSec) { codeSec.classList.add('hidden'); codeSec.classList.remove('flex'); }
+    const codeBox = document.getElementById('secretCodeBox');
+    if (codeBox) codeBox.innerText = '--------';
+    const cnt = document.getElementById('activeCamCount');
+    if (cnt) cnt.innerText = 'ENGAGED CHANNELS: 0/4';
+    const mc = document.getElementById('mirrorCountBadge');
+    if (mc) { mc.innerText = '0 CONNECTED'; mc.className = 'text-[9px] bg-slate-900 text-slate-400 font-bold px-2 py-0.5 rounded border border-slate-800 uppercase'; }
+
+    ['cam1','cam2','cam3','cam4'].forEach(id => {
+        const box = document.getElementById('box-'+id);
+        if (box) box.className = 'border border-slate-800 bg-slate-900 rounded-xl p-2 cursor-pointer opacity-20 scale-95 transition-all duration-300 select-none';
+        const st = document.getElementById('status-'+id);
+        if (st) { st.innerText = 'OFFLINE'; st.className = 'text-red-500'; }
+        const br = document.getElementById('bitrate-'+id);
+        if (br) br.innerText = '0 Kbps';
+        const th = document.getElementById('thumb-'+id);
+        if (th) th.style.display = 'flex';
+        const v = document.getElementById('v-'+id);
+        if (v) v.srcObject = null;
+    });
+
+    const si = document.getElementById('streamIndicator');
+    if (si) { si.innerText = 'OFF AIR'; si.className = 'text-[9px] bg-slate-900 text-slate-500 font-bold px-2 py-0.5 rounded border border-slate-800 uppercase'; }
+    const slb = document.getElementById('startLiveBtn');
+    if (slb) { slb.innerText = 'GO LIVE ON YT/FB'; slb.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black py-2.5 rounded-xl uppercase tracking-wider transition'; }
+
+    renderOverlayActive = true;
+    const ob = document.getElementById('overlaySwitchBtn');
+    if (ob) { ob.innerText = 'Graphics: ON'; ob.className = 'bg-blue-600 text-[10px] font-black px-3 py-1 rounded-lg uppercase transition'; }
+}
+
+function resetCameraUI() {
+    const jg = document.getElementById('joinGateWindow'); if (jg) jg.classList.remove('hidden');
+    const sa = document.getElementById('streamingActiveWindow'); if (sa) sa.classList.add('hidden');
+    const code = document.getElementById('studioRoomCode'); if (code) code.value = '';
+    const lcm = document.getElementById('localCamMonitor'); if (lcm) lcm.srcObject = null;
+}
+
+function resetBigScreenUI() {
+    bigScreenActive = false;
+    bigScreenId = null;
+    if (bigClockInterval) { clearInterval(bigClockInterval); bigClockInterval = null; }
+    const gate = document.getElementById('bigScreenGate'); if (gate) gate.classList.remove('hidden');
+    const stage = document.getElementById('bigScreenStage'); if (stage) stage.classList.add('hidden');
+    const bar = document.getElementById('bigControlBar'); if (bar) bar.classList.add('hidden');
+    const input = document.getElementById('bigScreenCodeInput'); if (input) input.value = '';
+    const err = document.getElementById('bigScreenError'); if (err) err.classList.add('hidden');
+    const restore = document.getElementById('bigBarRestoreBtn'); if (restore) restore.classList.add('hidden');
+    const vid = document.getElementById('bigScreenVideo'); if (vid) vid.srcObject = null;
+    const cs = document.getElementById('bigScreenConnState');
+    if (cs) { cs.innerText = '⏳ Establishing secure link...'; cs.className = 'absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur text-amber-400 text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl border border-slate-800 pointer-events-none'; }
+}
+
+// ============================================================
+//  DIRECTOR ENGINE (WS)
+// ============================================================
+function initiateDirectorRoom() {
+    wsDirector = new WebSocket(SERVER_URL);
+
+    wsDirector.onopen = () => {
+        wsDirector.send(JSON.stringify({ type: 'create_room' }));
+        document.getElementById('createRoomBtn').classList.add('hidden');
+        document.getElementById('codeDisplaySection').classList.replace('hidden', 'flex');
+    };
+
+    wsDirector.onclose = () => { console.warn('Director WS closed'); };
+
+    wsDirector.onmessage = async (message) => {
+        let data = JSON.parse(message.data);
+
+        if (data.type === 'room_created') {
+            directorRoomCode = data.roomCode;
+            document.getElementById('secretCodeBox').innerText = data.roomCode;
+        }
+
+        // ---------- CAMERA FEED ----------
+        else if (data.type === 'camera_joined') {
+            let pc = new RTCPeerConnection({
+                iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }],
+                rtcAudioJitterBufferMaxPackets: 10,
+                bundlePolicy: "max-bundle"
+            });
+            peerConnections[data.cameraId] = pc;
+            connectedCount++;
+            document.getElementById('activeCamCount').innerText = `ENGAGED CHANNELS: ${connectedCount}/4`;
+            document.getElementById(`status-${data.cameraId}`).innerText = "🟢 LIVE";
+            document.getElementById(`status-${data.cameraId}`).className = "text-emerald-400 font-bold";
+            document.getElementById(`box-${data.cameraId}`).classList.remove('opacity-20', 'scale-95');
+            document.getElementById(`thumb-${data.cameraId}`).style.display = "none";
+
+            let lastResult;
+            let bitrateInterval = setInterval(() => {
+                if (!pc || pc.connectionState === 'disconnected') return clearInterval(bitrateInterval);
+                pc.getStats(null).then(stats => {
+                    stats.forEach(report => {
+                        if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                            if (lastResult && lastResult.bytesReceived) {
+                                let bytes = report.bytesReceived - lastResult.bytesReceived;
+                                document.getElementById(`bitrate-${data.cameraId}`).innerText = Math.floor((bytes*8)/1000) + " Kbps";
+                            }
+                            lastResult = report;
+                        }
+                    });
+                });
+            }, 1000);
+
+            pc.ontrack = (event) => {
+                let targetVideo = document.getElementById(`v-${data.cameraId}`);
+                if (event.streams && event.streams[0]) {
+                    targetVideo.srcObject = event.streams[0];
+                    targetVideo.load();
+                    targetVideo.play().catch(e => console.log(e));
+                }
+            };
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    wsDirector.send(JSON.stringify({ type: 'ice-candidate', targetId: data.cameraId, candidate: event.candidate }));
+                }
+            };
+
+            let offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
+            await pc.setLocalDescription(offer);
+            wsDirector.send(JSON.stringify({ type: 'offer', targetId: data.cameraId, offer }));
+        }
+
+        // ---------- BIG SCREEN MIRROR REQUEST ----------
+        else if (data.type === 'big_screen_joined') {
+            console.log('Big screen joined:', data.screenId);
+            createBigScreenPeer(data.screenId);
+            updateMirrorCountBadge();
+        }
+
+        // ---------- GENERIC ANSWER (camera or big screen) ----------
+        else if (data.type === 'answer') {
+            if (peerConnections[data.cameraId]) {
+                await peerConnections[data.cameraId].setRemoteDescription(new RTCSessionDescription(data.answer));
+            } else if (bigScreenPeers[data.screenId]) {
+                await bigScreenPeers[data.screenId].setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+        }
+
+        // ---------- GENERIC ICE ----------
+        else if (data.type === 'ice-candidate') {
+            if (data.cameraId && peerConnections[data.cameraId]) {
+                await peerConnections[data.cameraId].addIceCandidate(new RTCIceCandidate(data.candidate));
+            } else if (data.screenId && bigScreenPeers[data.screenId]) {
+                await bigScreenPeers[data.screenId].addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        }
+
+        // ---------- CAMERA DISCONNECT ----------
+        else if (data.type === 'disconnect') {
+            connectedCount = Math.max(0, connectedCount - 1);
+            document.getElementById('activeCamCount').innerText = `ENGAGED CHANNELS: ${connectedCount}/4`;
+            document.getElementById(`status-${data.cameraId}`).innerText = "OFFLINE";
+            document.getElementById(`status-${data.cameraId}`).className = "text-red-500";
+            document.getElementById(`bitrate-${data.cameraId}`).innerText = "0 Kbps";
+            document.getElementById(`thumb-${data.cameraId}`).style.display = "flex";
+            document.getElementById(`box-${data.cameraId}`).className = "border border-slate-800 bg-slate-900 rounded-xl p-2 cursor-pointer opacity-20 scale-95 transition-all duration-300";
+            if (activeLiveStreamId === data.cameraId) activeLiveStreamId = null;
+            document.getElementById(`v-${data.cameraId}`).srcObject = null;
+        }
+
+        // ---------- BIG SCREEN DISCONNECT ----------
+        else if (data.type === 'big_screen_disconnect') {
+            const pc = bigScreenPeers[data.screenId];
+            if (pc) { try { pc.close(); } catch(e){} delete bigScreenPeers[data.screenId]; }
+            updateMirrorCountBadge();
+        }
+
+        // ---------- REMOTE COMMANDS FROM BIG SCREEN ----------
+        else if (data.type === 'remote_command') {
+            const cmd = data.command;
+            if (cmd === 'switch_cam' && data.camId) {
+                selectLiveCamChannel(data.camId);
+            } else if (cmd === 'toggle_graphics') {
+                toggleScoreboardOverlay();
+            } else if (cmd === 'set_ratio' && data.ratio) {
+                setAspectRatio(data.ratio);
+            }
+        }
+    };
+}
+
+function updateMirrorCountBadge() {
+    const n = Object.keys(bigScreenPeers).length;
+    const badge = document.getElementById('mirrorCountBadge');
+    if (!badge) return;
+    badge.innerText = `${n} CONNECTED`;
+    if (n > 0) {
+        badge.className = 'text-[9px] bg-sky-950 text-sky-400 font-bold px-2 py-0.5 rounded border border-sky-900 uppercase';
+    } else {
+        badge.className = 'text-[9px] bg-slate-900 text-slate-400 font-bold px-2 py-0.5 rounded border border-slate-800 uppercase';
+    }
+}
+
+// ============================================================
+//  DIRECTOR → BIG SCREEN WebRTC PEER
+// ============================================================
+function createBigScreenPeer(screenId) {
+    const pc = new RTCPeerConnection({
+        iceServers: [
+            { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+            { urls: ['stun:stun2.l.google.com:19302'] }
+        ],
+        bundlePolicy: "max-bundle"
+    });
+    bigScreenPeers[screenId] = pc;
+
+    // Capture current program canvas as a MediaStream
+    let stream;
+    try {
+        stream = canvas.captureStream(30);
+    } catch (e) {
+        console.error('captureStream failed', e);
+        return;
+    }
+
+    // Attach active camera audio if present
+    if (activeLiveStreamId) {
+        const liveVideo = document.getElementById(`v-${activeLiveStreamId}`);
+        if (liveVideo && liveVideo.srcObject && liveVideo.srcObject.getAudioTracks().length > 0) {
+            stream.addTrack(liveVideo.srcObject.getAudioTracks()[0]);
+        }
+    }
+
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+    pc.onicecandidate = (event) => {
+        if (event.candidate) {
+            wsDirector.send(JSON.stringify({
+                type: 'ice-candidate',
+                targetId: screenId,
+                candidate: event.candidate
+            }));
+        }
+    };
+
+    pc.onconnectionstatechange = () => {
+        console.log('Big screen PC state:', pc.connectionState);
+        if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+            try { pc.close(); } catch(e){}
+            delete bigScreenPeers[screenId];
+            updateMirrorCountBadge();
+        }
+    };
+
+    pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .then(() => {
+            wsDirector.send(JSON.stringify({
+                type: 'offer',
+                targetId: screenId,
+                offer: pc.localDescription
+            }));
+        })
+        .catch(err => console.error('Big screen offer failed', err));
+
+    // Send current state immediately
+    sendStateToBigScreen(screenId);
+}
+
+function sendStateToBigScreen(screenId) {
+    if (!wsDirector || wsDirector.readyState !== 1) return;
+    wsDirector.send(JSON.stringify({
+        type: 'state_update',
+        targetId: screenId,
+        activeCam: activeLiveStreamId,
+        graphicsOn: renderOverlayActive,
+        ratio: currentTargetRatio,
+        isStreaming: isCloudStreamingActive
+    }));
+}
+
+function broadcastStateToAllBigScreens() {
+    if (!wsDirector || wsDirector.readyState !== 1) return;
+    const payload = {
+        type: 'state_update',
+        activeCam: activeLiveStreamId,
+        graphicsOn: renderOverlayActive,
+        ratio: currentTargetRatio,
+        isStreaming: isCloudStreamingActive
+    };
+    wsDirector.send(JSON.stringify(payload));
+}
+
+// ============================================================
+//  CAMERA SELECTION (LOCAL — DIRECTOR)
+// ============================================================
+function selectLiveCamChannel(camId) {
+    const targetVideo = document.getElementById(`v-${camId}`);
+    if (!targetVideo || !targetVideo.srcObject) return;
+
+    activeLiveStreamId = camId;
+
+    ['cam1','cam2','cam3','cam4'].forEach(id => {
+        const box = document.getElementById(`box-${id}`);
+        if (box) box.classList.remove('border-red-600', 'ring-2', 'ring-red-600/50');
+    });
+    const activeBox = document.getElementById(`box-${camId}`);
+    if (activeBox) activeBox.classList.add('border-red-600', 'ring-2', 'ring-red-600/50');
+
+    broadcastStateToAllBigScreens();
+}
+
+// ============================================================
+//  CLOUD STREAMING (RTMP)
+// ============================================================
+function toggleCloudStreaming() {
+    if (!wsDirector || wsDirector.readyState !== 1) return alert("প্রথমে Cloud Network চালু করুন!");
+    const url = document.getElementById('rtmpUrlInput').value.trim();
+    const key = document.getElementById('rtmpKeyInput').value.trim();
+    if (!url || !key) return alert("দয়া করে Stream URL এবং Stream Key দুটিই ইনপুট করুন!");
+
+    if (!isCloudStreamingActive) {
+        wsDirector.send(JSON.stringify({ type: 'start_rtmp_stream', streamUrl: url, streamKey: key }));
+        isCloudStreamingActive = true;
+        document.getElementById('startLiveBtn').innerText = "STOP LIVE STREAM";
+        document.getElementById('startLiveBtn').className = "w-full bg-red-600 hover:bg-red-500 text-white text-[10px] font-black py-2.5 rounded-xl uppercase tracking-wider transition animate-pulse";
+        document.getElementById('streamIndicator').innerText = "🔴 ON AIR";
+        document.getElementById('streamIndicator').className = "text-[9px] bg-red-950 text-red-400 font-bold px-2 py-0.5 rounded border border-red-900 uppercase";
+
+        const canvasStream = canvas.captureStream(30);
+        let audioAdded = false;
+        if (activeLiveStreamId) {
+            const lv = document.getElementById(`v-${activeLiveStreamId}`);
+            if (lv && lv.srcObject && lv.srcObject.getAudioTracks().length > 0) {
+                canvasStream.addTrack(lv.srcObject.getAudioTracks()[0]);
+                audioAdded = true;
+            }
+        }
+        if (!audioAdded) {
+            try {
+                const ctxA = new (window.AudioContext || window.webkitAudioContext)();
+                const silence = ctxA.createMediaStreamDestination();
+                canvasStream.addTrack(silence.stream.getAudioTracks()[0]);
+            } catch(e) {}
+        }
+
+        mediaRecorder = new MediaRecorder(canvasStream, {
+            mimeType: 'video/webm;codecs=vp8,opus',
+            videoBitsPerSecond: 2800000,
+            audioBitsPerSecond: 128000
+        });
+        mediaRecorder.ondataavailable = async (event) => {
+            if (event.data && event.data.size > 0 && wsDirector.readyState === 1) {
+                const buf = await event.data.arrayBuffer();
+                const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+                wsDirector.send(JSON.stringify({ type: 'binary_frame', frame: b64 }));
+            }
+        };
+        mediaRecorder.start(1000);
+        broadcastStateToAllBigScreens();
+    } else {
+        if (mediaRecorder) { mediaRecorder.stop(); mediaRecorder = null; }
+        wsDirector.send(JSON.stringify({ type: 'stop_rtmp_stream' }));
+        isCloudStreamingActive = false;
+        document.getElementById('startLiveBtn').innerText = "GO LIVE ON YT/FB";
+        document.getElementById('startLiveBtn').className = "w-full bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black py-2.5 rounded-xl uppercase tracking-wider transition";
+        document.getElementById('streamIndicator').innerText = "OFF AIR";
+        document.getElementById('streamIndicator').className = "text-[9px] bg-slate-900 text-slate-500 font-bold px-2 py-0.5 rounded border border-slate-800 uppercase";
+        broadcastStateToAllBigScreens();
+    }
+}
+
+// ============================================================
+//  GRAPHICS
+// ============================================================
+function toggleScoreboardOverlay() {
+    renderOverlayActive = !renderOverlayActive;
+    const btn = document.getElementById('overlaySwitchBtn');
+    if (btn) {
+        btn.innerText = renderOverlayActive ? "Graphics: ON" : "Graphics: OFF";
+        btn.className = renderOverlayActive ? "bg-blue-600 text-[10px] font-black px-3 py-1 rounded-lg uppercase transition" : "bg-slate-800 text-[10px] font-black px-3 py-1 rounded-lg uppercase transition text-slate-400";
+    }
+    broadcastStateToAllBigScreens();
+}
+
+// ============================================================
+//  RENDER PIPELINE (DIRECTOR ONLY)
+// ============================================================
+function drawVideoWithAspectRatio(videoEl, canvasCtx, canvasW, canvasH) {
+    let videoW = videoEl.videoWidth || videoEl.width;
+    let videoH = videoEl.videoHeight || videoEl.height;
+    if (!videoW || !videoH) { videoW = 1280; videoH = 720; }
+    const canvasRatio = canvasW / canvasH;
+    const videoRatio = videoW / videoH;
+    let renderW, renderH, xO, yO;
+    if (videoRatio > canvasRatio) {
+        renderW = canvasW; renderH = canvasW / videoRatio;
+        xO = 0; yO = (canvasH - renderH) / 2;
+    } else {
+        renderH = canvasH; renderW = canvasH * videoRatio;
+        xO = (canvasW - renderW) / 2; yO = 0;
+    }
+    canvasCtx.fillStyle = '#000000';
+    canvasCtx.fillRect(0, 0, canvasW, canvasH);
+    try { canvasCtx.drawImage(videoEl, xO, yO, renderW, renderH); } catch(e){}
+}
+
+function renderBroadcastPipeline() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (activeLiveStreamId) {
+        const liveVideo = document.getElementById(`v-${activeLiveStreamId}`);
+        if (liveVideo && (liveVideo.readyState >= 2 || liveVideo.srcObject)) {
+            drawVideoWithAspectRatio(liveVideo, ctx, canvas.width, canvas.height);
+        }
+    } else {
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.fillText('SELECT AN ACTIVE CAMERA CHANNEL BELOW TO STREAM LIVE', canvas.width/2, canvas.height/2);
+    }
+
+    if (renderOverlayActive) {
+        ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+        const baseOffset = (currentTargetRatio === "9:16") ? 25 : 60;
+        const barWidth = (currentTargetRatio === "9:16" || currentTargetRatio === "1:1") ? canvas.width - (baseOffset*2) : 720;
+
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.9)';
+        ctx.fillRect(baseOffset, 40, (currentTargetRatio === "9:16" ? 220 : 260), 32);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = (currentTargetRatio === "9:16") ? 'bold 11px sans-serif' : 'bold 13px sans-serif';
+        ctx.fillText(document.getElementById('sponsorInput').value.toUpperCase(), baseOffset + 15, 61);
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+        ctx.fillRect(baseOffset, canvas.height - 100, barWidth, 55);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(baseOffset, canvas.height - 100, 6, 55);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = (currentTargetRatio === "9:16") ? 'bold 18px monospace' : 'bold 26px monospace';
+        ctx.fillText(document.getElementById('scoreInput').value, baseOffset + 25, canvas.height - 63);
+
+        if (currentTargetRatio === "9:16") {
+            ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 12px sans-serif';
+            ctx.fillText(document.getElementById('oversInput').value.toUpperCase(), baseOffset + 180, canvas.height - 80);
+            ctx.fillStyle = '#e2e8f0'; ctx.font = 'italic 12px sans-serif';
+            ctx.fillText(document.getElementById('batsmanInput').value, baseOffset + 180, canvas.height - 63);
+        } else {
+            ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 16px sans-serif';
+            ctx.fillText(document.getElementById('oversInput').value.toUpperCase(), baseOffset + 240, canvas.height - 64);
+            ctx.fillStyle = '#3b82f6'; ctx.fillRect(baseOffset + 400, canvas.height - 90, 2, 35);
+            ctx.fillStyle = '#e2e8f0'; ctx.font = 'italic 18px sans-serif';
+            ctx.fillText(document.getElementById('batsmanInput').value, baseOffset + 420, canvas.height - 64);
+        }
+    }
+
+    requestAnimationFrame(renderBroadcastPipeline);
+}
+renderBroadcastPipeline();
+
+// ============================================================
+//  CAMERA NODE (LOCAL FIELD TRANSMITTER)
+// ============================================================
+async function activateFieldCameraNode() {
+    const codeInput = document.getElementById('studioRoomCode').value.trim().toUpperCase();
+    if (!codeInput) return alert("দয়া করে সিক্রেট কোডটি টাইপ বা পেস্ট করুন!");
+    try {
+        localMediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { min: 640, ideal: 1280 }, height: { min: 480, ideal: 720 }, aspectRatio: { ideal: 1.777777778 }, facingMode: "environment" },
+            audio: true
+        });
+    } catch (err) { return alert("ক্যামেরা অন করা যায়নি!"); }
+
+    wsCamera = new WebSocket(SERVER_URL);
+    wsCamera.onopen = () => wsCamera.send(JSON.stringify({ type: 'join_room', roomCode: codeInput }));
+    wsCamera.onmessage = async (message) => {
+        const data = JSON.parse(message.data);
+        if (data.type === 'joined_successfully') {
+            document.getElementById('joinGateWindow').classList.add('hidden');
+            document.getElementById('streamingActiveWindow').classList.remove('hidden');
+            document.getElementById('assignedNodeName').innerText = `UPLINK ACTIVE AS: ${data.cameraId.toUpperCase()}`;
+            document.getElementById('localCamMonitor').srcObject = localMediaStream;
+        }
+        else if (data.type === 'offer') {
+            pcCam = new RTCPeerConnection({ iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] });
+            localMediaStream.getTracks().forEach(track => {
+                const sender = pcCam.addTrack(track, localMediaStream);
+                if (track.kind === 'video') {
+                    const params = sender.getParameters();
+                    if (!params.encodings) params.encodings = [{}];
+                    params.encodings[0].maxBitrate = 2000000;
+                    sender.setParameters(params);
+                }
+            });
+            pcCam.onicecandidate = (e) => {
+                if (e.candidate) wsCamera.send(JSON.stringify({ type: 'ice-candidate', candidate: e.candidate }));
+            };
+            await pcCam.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await pcCam.createAnswer();
+            await pcCam.setLocalDescription(answer);
+            wsCamera.send(JSON.stringify({ type: 'answer', answer }));
+        }
+        else if (data.type === 'ice-candidate' && pcCam) {
+            await pcCam.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+        else if (data.type === 'room_not_found') {
+            alert('রুম কোডটি সঠিক নয় বা ডিরেক্টর অফলাইন!');
+            exitToLobby();
+        }
+    };
+}
+
+// ============================================================
+//  BIG SCREEN — REMOTE MIRROR CLIENT
+// ============================================================
+function openBigScreen() {
+    bigScreenPanel.classList.remove('hidden');
+    bigScreenPanel.classList.add('flex');
+    resetBigScreenUI();
+    const input = document.getElementById('bigScreenCodeInput');
+    // Do NOT auto-fill from directorRoomCode — this is intended to run on another device
+    // (If you're testing on the same device in another tab, you'll type the code manually)
+    input.value = '';
+    setTimeout(() => input.focus(), 100);
+}
+
+function submitBigScreenCode() {
+    const code = document.getElementById('bigScreenCodeInput').value.trim().toUpperCase();
+    const err = document.getElementById('bigScreenError');
+    err.classList.add('hidden');
+
+    if (!code || code.length < 8) {
+        err.innerText = '⚠️ Please enter the full 8-character secret code';
+        err.classList.remove('hidden');
+        return;
+    }
+
+    // Open WS to signaling server and join as a big screen viewer
+    try {
+        wsBigScreen = new WebSocket(SERVER_URL);
+    } catch (e) {
+        err.innerText = '⚠️ Cannot connect to signaling server';
+        err.classList.remove('hidden');
+        return;
+    }
+
+    wsBigScreen.onopen = () => {
+        wsBigScreen.send(JSON.stringify({ type: 'big_screen_join', roomCode: code }));
+    };
+
+    wsBigScreen.onmessage = async (message) => {
+        const data = JSON.parse(message.data);
+
+        if (data.type === 'big_screen_joined_successfully') {
+            bigScreenId = data.screenId;
+            // Show stage
+            document.getElementById('bigScreenGate').classList.add('hidden');
+            document.getElementById('bigScreenStage').classList.remove('hidden');
+            document.getElementById('bigControlBar').classList.remove('hidden');
+            document.getElementById('bigScreenRoomLabel').innerText = code;
+            bigScreenActive = true;
+            startBigClock();
+            setBigConnState('🟢 Connected — waiting for video stream...', 'emerald');
+        }
+        else if (data.type === 'room_not_found' || data.type === 'invalid_code') {
+            err.innerText = '❌ রুম কোডটি সঠিক নয় অথবা ডিরেক্টর এখনো অনলাইনে নেই।';
+            err.classList.remove('hidden');
+            try { wsBigScreen.close(); } catch(e){}
+            wsBigScreen = null;
+            resetBigScreenUI();
+        }
+        else if (data.type === 'offer') {
+            // Director is offering us the program stream
+            pcBigScreen = new RTCPeerConnection({
+                iceServers: [
+                    { urls: ['stun:stun.l.google.com:19302'] },
+                    { urls: ['stun:stun1.l.google.com:19302'] }
+                ]
+            });
+            const videoEl = document.getElementById('bigScreenVideo');
+
+            pcBigScreen.ontrack = (event) => {
+                if (event.streams && event.streams[0]) {
+                    videoEl.srcObject = event.streams[0];
+                    videoEl.play().catch(e => console.log(e));
+                    setBigConnState('🔴 LIVE MIRROR ACTIVE', 'red');
+                }
+            };
+            pcBigScreen.onicecandidate = (e) => {
+                if (e.candidate) wsBigScreen.send(JSON.stringify({ type: 'ice-candidate', candidate: e.candidate }));
+            };
+            pcBigScreen.onconnectionstatechange = () => {
+                const st = pcBigScreen.connectionState;
+                console.log('Big screen PC state:', st);
+                if (st === 'connected') setBigConnState('🔴 LIVE MIRROR ACTIVE', 'red');
+                else if (st === 'connecting') setBigConnState('⏳ Establishing secure link...', 'amber');
+                else if (st === 'failed') setBigConnState('⚠️ Connection failed. Try again.', 'red');
+                else if (st === 'disconnected') {
+                    setBigConnState('⚠️ Director went offline.', 'red');
+                }
+            };
+
+            try {
+                await pcBigScreen.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await pcBigScreen.createAnswer();
+                await pcBigScreen.setLocalDescription(answer);
+                wsBigScreen.send(JSON.stringify({ type: 'answer', answer }));
+            } catch (e) {
+                console.error('Big screen answer error', e);
+                setBigConnState('⚠️ Failed to negotiate stream', 'red');
+            }
+        }
+        else if (data.type === 'ice-candidate' && pcBigScreen) {
+            try { await pcBigScreen.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e){}
+        }
+        else if (data.type === 'state_update') {
+            // Sync UI with director state
+            if (data.activeCam !== undefined) {
+                ['cam1','cam2','cam3','cam4'].forEach(id => {
+                    const btn = document.getElementById(`bigbtn-${id}`);
+                    if (!btn) return;
+                    btn.classList.remove('border-red-600', 'bg-red-950', 'text-red-300');
+                    if (data.activeCam === id) btn.classList.add('border-red-600', 'bg-red-950', 'text-red-300');
+                });
+            }
+            if (data.graphicsOn !== undefined) {
+                renderOverlayActive = data.graphicsOn;
+                const bg = document.getElementById('bigGraphicsBtn');
+                if (bg) {
+                    bg.innerText = renderOverlayActive ? 'Graphics: ON' : 'Graphics: OFF';
+                    bg.className = renderOverlayActive
+                        ? 'text-[11px] font-black text-blue-300 bg-blue-500/10 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-xl border border-blue-500/30 transition uppercase tracking-wider'
+                        : 'text-[11px] font-black text-slate-400 bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl border border-slate-700 transition uppercase tracking-wider';
+                }
+            }
+            if (data.ratio !== undefined) {
+                const sel = document.getElementById('bigRatioSelector');
+                if (sel) sel.value = data.ratio;
+            }
+            if (data.isStreaming !== undefined) {
+                const badge = document.getElementById('bigLiveBadge');
+                if (badge) {
+                    if (data.isStreaming) {
+                        badge.innerText = '🔴 LIVE';
+                        badge.className = 'text-[9px] bg-red-950 text-red-400 font-bold px-2 py-1.5 rounded border border-red-900 uppercase';
+                    } else {
+                        badge.innerText = 'STANDBY';
+                        badge.className = 'text-[9px] bg-slate-900 text-slate-500 font-bold px-2 py-1.5 rounded border border-slate-800 uppercase';
+                    }
+                }
+            }
+        }
+        else if (data.type === 'director_disconnected') {
+            setBigConnState('⚠️ Director went offline.', 'red');
+        }
+    };
+
+    wsBigScreen.onerror = () => {
+        err.innerText = '⚠️ Connection error. Please try again.';
+        err.classList.remove('hidden');
+    };
+
+    wsBigScreen.onclose = () => {
+        if (bigScreenActive) setBigConnState('⚠️ Disconnected from server.', 'red');
+    };
+}
+
+function setBigConnState(text, color) {
+    const el = document.getElementById('bigScreenConnState');
+    if (!el) return;
+    el.innerText = text;
+    if (color === 'red') {
+        el.className = 'absolute bottom-3 left-3 bg-red-950/80 backdrop-blur text-red-300 text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl border border-red-800 pointer-events-none';
+    } else if (color === 'amber') {
+        el.className = 'absolute bottom-3 left-3 bg-amber-950/80 backdrop-blur text-amber-300 text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl border border-amber-800 pointer-events-none';
+    } else if (color === 'emerald') {
+        el.className = 'absolute bottom-3 left-3 bg-emerald-950/80 backdrop-blur text-emerald-300 text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl border border-emerald-800 pointer-events-none';
+    }
+}
+
+// ============================================================
+//  BIG SCREEN REMOTE COMMANDS (sent to director via WS)
+// ============================================================
+function remoteSwitchCamera(camId) {
+    if (!wsBigScreen || wsBigScreen.readyState !== 1) return;
+    wsBigScreen.send(JSON.stringify({ type: 'remote_command', command: 'switch_cam', camId }));
+}
+function remoteToggleGraphics() {
+    if (!wsBigScreen || wsBigScreen.readyState !== 1) return;
+    wsBigScreen.send(JSON.stringify({ type: 'remote_command', command: 'toggle_graphics' }));
+}
+function remoteSetRatio(ratio) {
+    if (!wsBigScreen || wsBigScreen.readyState !== 1) return;
+    wsBigScreen.send(JSON.stringify({ type: 'remote_command', command: 'set_ratio', ratio }));
+}
+
+// ============================================================
+//  BIG SCREEN UI HELPERS
+// ============================================================
+function startBigClock() {
+    if (bigClockInterval) clearInterval(bigClockInterval);
+    const update = () => {
+        const clock = document.getElementById('bigScreenClock');
+        if (clock) clock.innerText = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    };
+    update();
+    bigClockInterval = setInterval(update, 1000);
+}
+
+function closeBigScreen() {
+    try {
+        if (pcBigScreen) { pcBigScreen.close(); pcBigScreen = null; }
+        if (wsBigScreen && wsBigScreen.readyState <= 1) {
+            try { wsBigScreen.send(JSON.stringify({ type: 'big_screen_leave' })); } catch(e){}
+            wsBigScreen.close();
+        }
+    } catch(e){}
+    wsBigScreen = null;
+    bigScreenId = null;
+
+    bigScreenPanel.classList.add('hidden');
+    bigScreenPanel.classList.remove('flex');
+    bigScreenActive = false;
+    if (bigClockInterval) { clearInterval(bigClockInterval); bigClockInterval = null; }
+    if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    resetBigScreenUI();
+
+    const anyVisible = !document.getElementById('directorWindow').classList.contains('hidden')
+                    || !document.getElementById('cameraWindow').classList.contains('hidden');
+    if (!anyVisible) document.getElementById('lobbyGate').classList.remove('hidden');
+}
+
+function toggleBigFullscreen() {
+    if (!document.fullscreenElement) {
+        bigScreenPanel.requestFullscreen().catch(err => alert(`Fullscreen error: ${err.message}`));
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function toggleBigControlBar() {
+    const bar = document.getElementById('bigControlBar');
+    const restoreBtn = document.getElementById('bigBarRestoreBtn');
+    if (bar.classList.contains('hidden')) {
+        bar.classList.remove('hidden');
+        restoreBtn.classList.add('hidden');
+    } else {
+        bar.classList.add('hidden');
+        restoreBtn.classList.remove('hidden');
+    }
+}
+
+// Auto-uppercase code inputs
+document.getElementById('bigScreenCodeInput').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+document.getElementById('studioRoomCode').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+
+// Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && bigScreenActive) {
+        if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+        else closeBigScreen();
+    }
+});
+</script>
+</body>
+</html>
